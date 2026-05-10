@@ -44,6 +44,9 @@ jobs:
         echo "$(brew --prefix mono)/bin" >> $GITHUB_PATH
         mono --version
         msbuild --version || true
+        dotnet msbuild --version || true
+        find /opt -name msbuild || true
+        find /usr -name msbuild || true
 
     - name: Restore NuGet Packages
       run: nuget restore "CM Launcher.sln"
@@ -51,7 +54,7 @@ jobs:
     - name: Build CML
       working-directory: ./OSX
       run: |
-        msbuild /property:Configuration=Release
+        dotnet msbuild /property:Configuration=Release
         mkdir -p zip
         mv bin/Release/CML.app zip/CML.app
         chmod +x zip/CML.app/Contents/MacOS/CML
