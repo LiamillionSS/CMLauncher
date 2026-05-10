@@ -19,7 +19,7 @@ jobs:
     - name: Build CML
       working-directory: ./Windows
       run: |
-        dotnet build --configuration Release
+        dotnet build --configuration Release -p:GenerateResourceMSBuildArchitecture=x64
         mv "bin/Release/CM Launcher.exe" "bin/Release/CML.exe"
 
     - uses: actions/upload-artifact@v7
