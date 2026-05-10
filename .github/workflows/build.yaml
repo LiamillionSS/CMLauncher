@@ -3,13 +3,15 @@ on: [push]
 jobs:
   build-win:
     runs-on: windows-latest
+    outputs:
+      digest: ${{steps.upload-win.outputs.artifact-digest}}
     
     steps:
     - uses: actions/checkout@v2
 
     - uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '3.1.x'
+        dotnet-version: '8.0.x'
 
     - name: Restore NuGet Packages
       run: nuget restore "CM Launcher.sln"
@@ -18,16 +20,18 @@ jobs:
       working-directory: ./Windows
       run: |
         dotnet build --configuration Release
-        mv "bin/Release/CM Launcher.exe" "bin/Release/CML2.exe"
+        mv "bin/Release/CM Launcher.exe" "bin/Release/CML.exe"
 
-    - id: upload-file
-      uses: google-github-actions/upload-cloud-storage@main
+    - uses: actions/upload-artifact@v7
+      id: upload-win
       with:
-        credentials: ${{ secrets.gcp_credentials }}
-        path: Windows/bin/Release/CML2.exe
-        destination: chromapper
+        name: 'CML.exe'
+        path: Windows/bin/Release/CML.exe
+        archive: false
   build-osx:
-    runs-on: macos-latest
+    runs-on: macos-13
+    outputs:
+      digest: ${{steps.upload-osx.outputs.artifact-digest}}
 
     steps:
     - uses: actions/checkout@v2
@@ -52,17 +56,18 @@ jobs:
     - uses: papeloto/action-zip@v1
       with:
         files: OSX/zip
-        dest: CML2.app.zip
+        dest: CML.app.zip
 
-    - id: upload-file
-      uses: google-github-actions/upload-cloud-storage@main
+    - uses: actions/upload-artifact@v7
+      id: upload-osx
       with:
-        credentials: ${{ secrets.gcp_credentials }}
-        path: CML2.app.zip
-        destination: chromapper
-        gzip: false
+        name: 'CML.app.zip'
+        path: CML.app.zip
+        archive: false
   build-linux:
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{steps.upload-linux.outputs.artifact-digest}}
     
     steps:
     - uses: actions/checkout@v2
@@ -77,28 +82,43 @@ jobs:
       working-directory: ./Linux
       run: |
         dotnet publish -c Release --sc -r linux-x64
-    
-    - id: upload-file
-      uses: google-github-actions/upload-cloud-storage@main
-      with:
-        credentials: ${{ secrets.gcp_credentials }}
-        path: Linux/bin/Release/net6.0/linux-x64/publish/CML-Linux
-        destination: chromapper
-        gzip: false
 
-  update-version:
+    - uses: actions/upload-artifact@v7
+      id: upload-linux
+      with:
+        name: 'CML-Linux'
+        path: Linux/bin/Release/net6.0/linux-x64/publish/CML-Linux
+        archive: false
+
+  version-file:
     runs-on: ubuntu-latest
     needs: [build-osx, build-win, build-linux]
     steps:
     - uses: actions/checkout@v2
 
     - name: Write version file
-      run: grep -Po 'APP_VERSION = \K[0-9]+' Shared/Config.cs | tr -d '\n' > cml2
+      run: grep -Po 'APP_VERSION = \K[0-9]+' Shared/Config.cs | tr -d '\n' > cml
 
-    - id: upload-file
-      uses: google-github-actions/upload-cloud-storage@main
+    - uses: actions/upload-artifact@v7
       with:
-        credentials: ${{ secrets.gcp_credentials }}
-        path: cml2
-        destination: chromapper
-        gzip: false
+        name: 'cml'
+        path: cml
+        archive: false
+
+  index-file:
+    runs-on: ubuntu-latest
+    needs: [build-osx, build-win, build-linux]
+    steps:
+    - name: Parse config file
+      uses: edgardleal/mustache-template-action@v1.0.0
+      env:
+        LINUX_HASH: ${{needs.build-linux.outputs.digest}}
+      with:
+        input: index.mo
+        output: index.html
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: 'index.html'
+        path: index.html
+        archive: false
