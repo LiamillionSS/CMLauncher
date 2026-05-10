@@ -9,7 +9,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
-    - uses: actions/setup-dotnet@v1
+    - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '8.0.x'
 
@@ -19,7 +19,7 @@ jobs:
     - name: Build CML
       working-directory: ./Windows
       run: |
-        dotnet build --configuration Release -p:GenerateResourceMSBuildArchitecture=x64
+        dotnet build --configuration Release -p:GenerateResourceMSBuildArchitecture=x64 -p:GenerateResourceUsePreserializedResources=true
         mv "bin/Release/CM Launcher.exe" "bin/Release/CML.exe"
 
     - uses: actions/upload-artifact@v7
@@ -29,12 +29,15 @@ jobs:
         path: Windows/bin/Release/CML.exe
         archive: false
   build-osx:
-    runs-on: macos-13
+    runs-on: macos-latest
     outputs:
       digest: ${{steps.upload-osx.outputs.artifact-digest}}
 
     steps:
     - uses: actions/checkout@v6
+
+    - name: Install Mono
+      run: brew install mono
 
     - uses: maxim-lobanov/setup-xamarin@v1
       with:
