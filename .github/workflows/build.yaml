@@ -39,6 +39,12 @@ jobs:
     - name: Install Mono
       run: brew install mono nuget
 
+    - name: Install MSBuild (Mono)
+      run: |
+        echo "$(brew --prefix mono)/bin" >> $GITHUB_PATH
+        mono --version
+        msbuild --version || true
+
     - name: Restore NuGet Packages
       run: nuget restore "CM Launcher.sln"
 
