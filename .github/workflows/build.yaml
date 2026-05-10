@@ -7,7 +7,7 @@ jobs:
       digest: ${{steps.upload-win.outputs.artifact-digest}}
     
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
 
     - uses: actions/setup-dotnet@v1
       with:
@@ -34,7 +34,7 @@ jobs:
       digest: ${{steps.upload-osx.outputs.artifact-digest}}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
 
     - uses: maxim-lobanov/setup-xamarin@v1
       with:
@@ -70,7 +70,7 @@ jobs:
       digest: ${{steps.upload-linux.outputs.artifact-digest}}
     
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     
     - name: Prepare Environment
       run: |
@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-osx, build-win, build-linux]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
 
     - name: Write version file
       run: grep -Po 'APP_VERSION = \K[0-9]+' Shared/Config.cs | tr -d '\n' > cml
@@ -109,6 +109,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-osx, build-win, build-linux]
     steps:
+    - uses: actions/checkout@v6
+
     - name: Parse config file
       uses: edgardleal/mustache-template-action@v1.0.0
       env:
