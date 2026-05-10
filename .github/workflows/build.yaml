@@ -39,12 +39,6 @@ jobs:
     - name: Install Mono
       run: brew install mono
 
-    - uses: maxim-lobanov/setup-xamarin@v1
-      with:
-        mono-version: latest
-        xamarin-mac-version: latest
-        xcode-version: latest
-
     - name: Restore NuGet Packages
       run: nuget restore "CM Launcher.sln"
 
