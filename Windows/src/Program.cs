@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
@@ -64,31 +65,50 @@ namespace CM_Launcher
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        private static void Main()
+        private static void Main(string[] args)
         {
             using (SentrySdk.Init("https://76dcf1f2484f4839a78b3713420b5147@o462013.ingest.sentry.io/5556322"))
             {
+                var identity = WindowsIdentity.GetCurrent();
+                SentrySdk.ConfigureScope(scope =>
+                {
+                    scope.User = new User
+                    {
+                        Username = identity.Name
+                    };
+                });
+
                 using (new Mutex(true, "CMLauncher", out var createdNew))
                 {
-                    if (!createdNew) return;
-
-                    var identity = WindowsIdentity.GetCurrent();
-                    SentrySdk.ConfigureScope(scope =>
+                    var isAdmin = WindowsSpecific.IsAdministrator();
+                    if (isAdmin)
                     {
-                        scope.User = new User
+                        if (createdNew)
                         {
-                            Username = identity.Name
-                        };
-                    });
+                            MessageBox.Show("Don't run CML as admin");
+                            return;
+                        }
 
-                    SetCurrentProcessExplicitAppUserModelID(CmExeName);
-                    UpdatePinnedTaskBarElements();
+                        LaunchApp(args, true);
+                    }
+                    else
+                    {
+                        if (!createdNew) return;
 
-                    Application.EnableVisualStyles();
-                    Application.SetCompatibleTextRenderingDefault(false);
-                    Application.Run(new Updater());
+                        SetCurrentProcessExplicitAppUserModelID(CmExeName);
+                        UpdatePinnedTaskBarElements();
+
+                        LaunchApp(args, false);
+                    }
                 }
             }
+        }
+
+        private static void LaunchApp(string[] args, bool isAdmin)
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Updater(args, isAdmin));
         }
     }
 }

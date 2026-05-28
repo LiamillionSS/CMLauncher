@@ -70,7 +70,7 @@ public class xdelta3
 
     #region PInvoke wrappers
 
-    [DllImport("xdelta3.dll", EntryPoint = "xd3_encode_memory", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("xdelta3.so", EntryPoint = "xd3_encode_memory", CharSet = CharSet.Ansi)]
     static extern int xd3_encode_memory(
         byte[] input,
         UInt32 input_size,
@@ -81,7 +81,7 @@ public class xdelta3
         UInt32 avail_output,
         int flags);
 
-    [DllImport("xdelta3.dll", EntryPoint = "xd3_decode_memory", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport("xdelta3.so", EntryPoint = "xd3_decode_memory", CharSet = CharSet.Ansi)]
     static extern int xd3_decode_memory(
         byte[] input,
         UInt32 input_size,

@@ -10,11 +10,17 @@ namespace CM_Launcher
         private readonly SynchronizationContext synchronizationContext;
         public static FormWindowState OriginalWindowState;
 
-        private static bool FilesLocked(IPlatformSpecific specific)
+        private static bool FilesLocked(IPlatformSpecific specific, bool isAdmin)
         {
-            var file = Path.Combine(specific.GetDownloadFolder(), "chromapper", "ChroMapper.exe");
+            var folder = Path.Combine(specific.GetDownloadFolder(), "chromapper");
+            var file = Path.Combine(folder, "ChroMapper.exe");
             try
             {
+                if (!File.Exists(folder))
+                {
+                    Directory.CreateDirectory(folder);
+                }
+
                 if (File.Exists(file))
                 {
                     using (var stream = new FileStream(file, FileMode.Open, FileAccess.Write, FileShare.None))
@@ -22,9 +28,16 @@ namespace CM_Launcher
                         stream.Close();
                     }
                 }
+                else
+                {
+                    specific.GetVersion().Update(0, "");
+                    File.WriteAllBytes(file, Array.Empty<byte>());
+                    File.Delete(file);
+                }
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                if (isAdmin) MessageBox.Show(e.Message);
                 return true;
             }
 
@@ -38,21 +51,22 @@ namespace CM_Launcher
             base.OnLoad(e);
         }
 
-        public Updater()
+        public Updater(string[] args, bool isAdmin)
         {
             InitializeComponent();
             synchronizationContext = SynchronizationContext.Current;
 
-            var specific = new WindowsSpecific(this);
-            int tries = 0;
-            while (tries++ < 3)
+            var specific = new WindowsSpecific(this, args);
+
+            if (!FilesLocked(specific, isAdmin))
             {
-                if (!FilesLocked(specific))
-                {
-                    new Main(specific);
-                    return;
-                }
-                Thread.Sleep(1000 * tries);
+                new Main(specific);
+                return;
+            }
+
+            if (!isAdmin)
+            {
+                specific.StartAsAdmin();
             }
 
             new Thread(() =>

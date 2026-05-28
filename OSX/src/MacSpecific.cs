@@ -5,7 +5,6 @@ using AppKit;
 using Foundation;
 using SharpCompress.Archives;
 using SharpCompress.Common;
-using SharpCompress.Readers;
 using SimpleJSON;
 
 public class MacSpecific : IPlatformSpecific
@@ -45,6 +44,8 @@ public class MacSpecific : IPlatformSpecific
         return "osx/";
     }
 
+    public bool UseCDN() => true;
+
     public void UpdateLabel(string label)
     {
         NSApplication.SharedApplication.InvokeOnMainThread(() =>
@@ -67,15 +68,15 @@ public class MacSpecific : IPlatformSpecific
         var startInfo = new ProcessStartInfo()
         {
             FileName = "/bin/bash",
-            Arguments = $"-c \"chmod +x /Applications/ChroMapper.app/Contents/MacOS/ChroMapper\"",
+            Arguments = $"-c \"chmod +x {GetDownloadFolder()}/{GetBinaryPath()}\"",
 
             CreateNoWindow = true
         };
         Process.Start(startInfo).WaitForExit();
 
-        var startInfo2 = new ProcessStartInfo("/Applications/ChroMapper.app/Contents/MacOS/ChroMapper")
+        var startInfo2 = new ProcessStartInfo($"{GetDownloadFolder()}/{GetBinaryPath()}")
         {
-            WorkingDirectory = "/Applications",
+            WorkingDirectory = GetDownloadFolder(),
             Arguments = $"--launcher \"{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName)}\""
         };
 
@@ -86,6 +87,9 @@ public class MacSpecific : IPlatformSpecific
             NSApplication.SharedApplication.Terminate(NSApplication.SharedApplication);
         });
     }
+
+    public string GetBinaryPath() =>
+        "ChroMapper.app/Contents/MacOS/ChroMapper";
 
     public string GetJenkinsFilename()
     {
@@ -99,7 +103,8 @@ public class MacSpecific : IPlatformSpecific
 
     public string GetDownloadFolder()
     {
-        return "/Applications";
+        var homeDir = Environment.GetEnvironmentVariable("HOME");
+        return $"{homeDir}/Applications";
     }
 
     public string LocalFolderName()

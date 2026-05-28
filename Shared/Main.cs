@@ -23,7 +23,7 @@ public class Main : IProgress<float>
         this.platformSpecific = platformSpecific;
 
         var mainNode = platformSpecific.GetCMConfig();
-        useChannel = mainNode["ReleaseChannel"].Value == "0" ? ReleaseChannel.Stable : ReleaseChannel.Dev;
+        useChannel = mainNode["ReleaseChannel"].Value == "1" ? ReleaseChannel.Dev : ReleaseChannel.Stable;
         cdnUrl = mainNode.HasKey("ReleaseServer") ? mainNode["ReleaseServer"].Value : Config.CDN_URL;
 
         new Thread(DoUpdate).Start();
@@ -227,7 +227,7 @@ public class Main : IProgress<float>
     private async Task<int> UpdateUsingZip(int version)
     {
         platformSpecific.UpdateLabel("Downloading update...");
-        string downloadUrl = Config.USE_CDN ? $"{cdnUrl}/{platformSpecific.GetCDNPrefix()}{version}/{platformSpecific.GetCDNFilename()}" :
+        string downloadUrl = platformSpecific.UseCDN() ? $"{cdnUrl}/{platformSpecific.GetCDNPrefix()}{version}/{platformSpecific.GetCDNFilename()}" :
             $"https://jenkins.kirkstall.top-cat.me/job/ChroMapper/{version}/artifact/{platformSpecific.GetJenkinsFilename()}";
 
         using (var tmp = new TempFile())
